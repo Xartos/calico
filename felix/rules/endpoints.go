@@ -20,6 +20,9 @@ import (
 	"github.com/projectcalico/calico/felix/hashutils"
 	. "github.com/projectcalico/calico/felix/iptables"
 	"github.com/projectcalico/calico/felix/proto"
+
+  "os"
+  "strings"
 )
 
 const (
@@ -419,6 +422,13 @@ func (r *DefaultRuleRenderer) endpointIptablesChain(
 			//
 			// For untracked and pre-DNAT rules, we don't do that because there may be
 			// normal rules still to be applied to the packet in the filter table.
+      if (strings.ToLower(os.Getenv("FELIX_LOG_DROPPED_PACKAGES")) == "true") {
+        rules = append(rules, Rule{
+          Match:   Match().MarkClear(r.IptablesMarkPass),
+          Action:  LogAction{Prefix: "Packet dropped by calico"},
+          Comment: []string{"LOG: Drop if no policies passed packet"},
+        })
+      }
 			rules = append(rules, Rule{
 				Match:   Match().MarkClear(r.IptablesMarkPass),
 				Action:  DropAction{},
